@@ -1,0 +1,29 @@
+name: publish
+on:
+  schedule:
+    - cron: "0 3 * * *"   # 12:00 KST card-news
+    - cron: "0 11 * * *"  # 20:00 KST reel
+  workflow_dispatch:
+    inputs:
+      id:
+        description: "post id from schedule.json (blank = whatever is due now)"
+        required: false
+permissions:
+  contents: write
+concurrency: publish
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: python scripts/publish.py ${{ inputs.id && format('--id {0}', inputs.id) || '' }}
+      - name: Record published posts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add published.json
+          git diff --cached --quiet || (git commit -m "Record published posts" && git push)
