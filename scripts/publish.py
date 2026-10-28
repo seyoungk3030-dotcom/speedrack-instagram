@@ -77,10 +77,6 @@ def main():
         print(f"container {cid} ready; not published")
         return
 
-    if not sched.get("approved"):
-        print("schedule.json is not approved yet; nothing published")
-        return
-
     if a.id:
         due = [by_id[a.id]]
     else:
@@ -89,6 +85,9 @@ def main():
         due = [p for p in sched["posts"] if p["date"] == now.strftime("%Y-%m-%d") and p["slot"] == slot]
 
     for post in due:
+        if not post.get("approved"):
+            print(f"{post['id']} is not approved yet; skipped")
+            continue
         if post["id"] in done:
             print(f"{post['id']} already published")
             continue
