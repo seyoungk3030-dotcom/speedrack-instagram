@@ -23,11 +23,18 @@ def call(method, path, **params):
         req = urllib.request.Request(f"{url}?{data.decode()}")
     else:
         req = urllib.request.Request(url, data=data, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        sys.exit(f"{method} {path} failed: {e.code} {e.read().decode()}")
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code < 500 or attempt == 3:
+                sys.exit(f"{method} {path} failed: {e.code} {e.read().decode()}")
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+            # A container can be published only once, so retrying is safe.
+            if attempt == 3:
+                sys.exit(f"{method} {path} failed: {e}")
+        time.sleep(5 * 2 ** attempt)
 
 
 def media_url(path):
