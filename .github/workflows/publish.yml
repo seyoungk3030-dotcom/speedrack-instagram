@@ -8,6 +8,10 @@ on:
       id:
         description: "post id from schedule.json (blank = whatever is due now)"
         required: false
+      check:
+        description: "test only: build the post for this id without publishing"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency: publish
@@ -20,7 +24,7 @@ jobs:
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
-        run: python scripts/publish.py ${{ inputs.id && format('--id {0}', inputs.id) || '' }}
+        run: python scripts/publish.py ${{ inputs.id && format(inputs.check && '--check {0}' || '--id {0}', inputs.id) || '' }}
       - name: Record published posts
         run: |
           git config user.name "github-actions[bot]"
